@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>salary.py — Code Explainer</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=Playfair+Display:wght@700;900&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #141418;
+    --surface2: #1c1c22;
+    --border: #2a2a35;
+    --amber: #f0a500;
+    --amber-dim: #a07020;
+    --amber-glow: rgba(240,165,0,0.12);
+    --green: #3ddc84;
+    --red: #ff5f5f;
+    --blue: #5ba4f5;
+    --text: #e8e6e0;
+    --text-dim: #7a7870;
+    --text-mid: #b0aca4;
+    --mono: 'IBM Plex Mono', monospace;
+    --serif: 'Source Serif 4', serif;
+    --display: 'Playfair Display', serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: 17px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* NOISE TEXTURE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    position: relative;
+    padding: 4rem 2rem;
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(240,165,0,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-inner {
+    max-width: 760px;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    animation: fadeUp 0.9s ease both;
+  }
+
+  .hero-label {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    color: var(--amber);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(2.8rem, 7vw, 5rem);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.35s ease both;
+  }
+
+  h1 span { color: var(--amber); }
+
+  .hero-desc {
+    font-size: 1.05rem;
+    color: var(--text-mid);
+    max-width: 540px;
+    margin: 0 auto 2.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.5s ease both;
+  }
+
+  .nav-pills {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.65s ease both;
+  }
+
+  .nav-pill {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    padding: 0.45rem 1.1rem;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: all 0.2s;
+    background: var(--surface);
+  }
+
+  .nav-pill:hover {
+    border-color: var(--amber);
+    color: var(--amber);
+    background: var(--amber-glow);
+  }
+
+  /* SECTIONS */
+  .section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .section.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.25em;
+    color: var(--amber-dim);
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+  }
+
+  h2 {
+    font-family: var(--display);
+    font-size: clamp(1.7rem, 3.5vw, 2.4rem);
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    line-height: 1.15;
+  }
+
+  h3 {
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--amber);
+    letter-spacing: 0.05em;
+    margin: 2rem 0 0.75rem;
+  }
+
+  p { color: var(--text-mid); margin-bottom: 1rem; }
+
+  /* CODE BLOCKS */
+  .code-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 1.5rem 0;
+  }
+
+  .code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 1rem;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .code-title {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+  }
+
+  .code-dots { display: flex; gap: 0.4rem; }
+  .code-dots span {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .code-dots span:nth-child(1) { background: #ff5f5f; }
+  .code-dots span:nth-child(2) { background: #ffbd2e; }
+  .code-dots span:nth-child(3) { background: #28c840; }
+
+  pre {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    line-height: 1.8;
+    padding: 1.25rem 1.5rem;
+    overflow-x: auto;
+    color: var(--text);
+  }
+
+  .hl-comment { color: #5a6e54; font-style: italic; }
+  .hl-keyword { color: #c792ea; }
+  .hl-string { color: #c3e88d; }
+  .hl-number { color: #f78c6c; }
+  .hl-func { color: var(--blue); }
+  .hl-var { color: var(--text); }
+  .hl-format { color: var(--amber); }
+  .hl-bug { background: rgba(255,95,95,0.15); border-bottom: 2px solid var(--red); border-radius: 2px; }
+  .hl-ok { background: rgba(61,220,132,0.08); border-bottom: 2px solid var(--green); border-radius: 2px; }
+
+  /* ANNOTATION CARDS */
+  .annotation-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+
+  .annotation {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.1rem 1.25rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .annotation:hover {
+    border-color: var(--amber-dim);
+    transform: translateY(-2px);
+  }
+
+  .annotation::before {
+    content: attr(data-num);
+    position: absolute;
+    top: -10px;
+    right: 10px;
+    font-family: var(--display);
+    font-size: 4rem;
+    font-weight: 900;
+    color: var(--amber-glow);
+    line-height: 1;
+  }
+
+  .annotation-title {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--amber);
+    margin-bottom: 0.4rem;
+    letter-spacing: 0.04em;
+  }
+
+  .annotation p {
+    font-size: 0.88rem;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  /* COMPARISON TABLE */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .compare-table th {
+    background: var(--surface2);
+    padding: 0.75rem 1rem;
+    text-align: left;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .compare-table td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-mid);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: var(--surface); }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 2px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+  }
+
+  .badge-ok { background: rgba(61,220,132,0.15); color: var(--green); }
+  .badge-err { background: rgba(255,95,95,0.15); color: var(--red); }
+  .badge-warn { background: rgba(240,165,0,0.15); color: var(--amber); }
+
+  /* INTERACTIVE SIMULATOR */
+  .simulator {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 1.5rem 0;
+  }
+
+  .sim-header {
+    background: var(--surface2);
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .sim-title {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--amber);
+    letter-spacing: 0.08em;
+  }
+
+  .sim-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  @media (max-width: 620px) {
+    .sim-body { grid-template-columns: 1fr; }
+  }
+
+  .sim-inputs {
+    padding: 1.5rem;
+    border-right: 1px solid var(--border);
+  }
+
+  .sim-output {
+    padding: 1.5rem;
+  }
+
+  .input-group {
+    margin-bottom: 1rem;
+  }
+
+  .input-group label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+  }
+
+  .input-group input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .input-group input:focus {
+    border-color: var(--amber);
+    box-shadow: 0 0 0 2px var(--amber-glow);
+  }
+
+  .run-btn {
+    width: 100%;
+    background: var(--amber);
+    color: #0d0d0f;
+    border: none;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.65rem;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .run-btn:hover { background: #ffc030; }
+  .run-btn:active { transform: scale(0.98); }
+
+  .output-title {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  .output-table {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    width: 100%;
+  }
+
+  .output-table th {
+    text-align: left;
+    color: var(--text-dim);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .output-table td {
+    padding: 0.3rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+  }
+
+  .output-table td:last-child { color: var(--amber); text-align: right; }
+
+  .output-row {
+    opacity: 0;
+    transform: translateX(6px);
+    animation: rowIn 0.25s ease both;
+  }
+
+  @keyframes rowIn {
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .empty-state {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    font-style: italic;
+    padding: 1rem 0;
+  }
+
+  /* FLOWCHART */
+  .flowchart {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+  }
+
+  .fc-wrap {
+    min-width: 280px;
+    max-width: 420px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .fc-node {
+    width: 100%;
+    max-width: 320px;
+    position: relative;
+  }
+
+  .fc-box {
+    border-radius: 4px;
+    padding: 0.6rem 1rem;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    line-height: 1.4;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .fc-box:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    z-index: 10;
+  }
+
+  .fc-terminal {
+    background: var(--surface2);
+    border: 2px solid var(--amber);
+    color: var(--amber);
+    border-radius: 30px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+  }
+
+  .fc-process {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .fc-decision {
+    background: var(--surface2);
+    border: 1px solid var(--blue);
+    color: var(--blue);
+    transform: perspective(300px);
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+    padding: 1.4rem 2rem;
+    margin: 0 auto;
+    width: 200px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+  }
+
+  .fc-io {
+    background: rgba(240,165,0,0.08);
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+    clip-path: polygon(8% 0%, 100% 0%, 92% 100%, 0% 100%);
+    padding: 0.6rem 1.5rem;
+  }
+
+  .fc-bug-box {
+    background: rgba(255,95,95,0.1);
+    border: 1px solid var(--red);
+    color: var(--red);
+  }
+
+  .fc-ok-box {
+    background: rgba(61,220,132,0.08);
+    border: 1px solid var(--green);
+    color: var(--green);
+  }
+
+  .fc-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 36px;
+    position: relative;
+  }
+
+  .fc-arrow::before {
+    content: '';
+    width: 1px;
+    flex: 1;
+    background: var(--border);
+  }
+
+  .fc-arrow::after {
+    content: '▼';
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    line-height: 1;
+  }
+
+  .fc-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 0.06em;
+    text-align: center;
+    padding: 0.1rem 0;
+  }
+
+  .fc-branch {
+    display: flex;
+    width: 100%;
+    justify-content: space-around;
+    align-items: flex-start;
+    gap: 1rem;
+    position: relative;
+  }
+
+  .fc-branch::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20%;
+    right: 20%;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .fc-branch-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    flex: 1;
+  }
+
+  .fc-branch-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    margin-bottom: 0.4rem;
+    padding: 0 0.3rem;
+  }
+
+  .fc-loop-box {
+    background: rgba(91,164,245,0.08);
+    border: 1px solid var(--blue);
+    color: var(--blue);
+    position: relative;
+  }
+
+  .fc-loop-box::before {
+    content: '↻';
+    position: absolute;
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1rem;
+    color: var(--blue);
+  }
+
+  /* FLOWCHART SIDE BY SIDE */
+  .fc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  @media (max-width: 680px) {
+    .fc-grid { grid-template-columns: 1fr; }
+  }
+
+  .fc-panel-title {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .fc-panel-title.v1 { color: var(--amber); }
+  .fc-panel-title.v3 { color: var(--red); }
+
+  /* VERDICT BANNER */
+  .verdict {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--amber);
+    border-radius: 4px;
+    padding: 1.25rem 1.5rem;
+    margin: 1.5rem 0;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .verdict-icon {
+    font-size: 1.4rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .verdict-text {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: var(--text-mid);
+  }
+
+  .verdict-text strong { color: var(--text); }
+
+  /* SCROLL INDICATOR */
+  .scroll-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 2px;
+    background: var(--amber);
+    z-index: 999;
+    transition: width 0.1s;
+  }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding: 3rem 2rem;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+  }
+
+  /* DIFF DISPLAY */
+  .diff {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    line-height: 1.8;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 1.5rem 0;
+  }
+
+  .diff-line {
+    padding: 0.1rem 1rem;
+    display: flex;
+    gap: 1rem;
+  }
+
+  .diff-line.add { background: rgba(61,220,132,0.06); color: var(--green); }
+  .diff-line.remove { background: rgba(255,95,95,0.06); color: var(--red); text-decoration: line-through; opacity: 0.7; }
+  .diff-line.context { color: var(--text-dim); }
+
+  .diff-gutter {
+    width: 1.5rem;
+    flex-shrink: 0;
+    text-align: right;
+    opacity: 0.5;
+    font-size: 0.7rem;
+    user-select: none;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+</style>
+</head>
+<body>
+
+<div class="scroll-indicator" id="scrollBar"></div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <p class="hero-label">Programming Exercise 3.7 · Python · Code Explainer</p>
+    <h1><span>salary.py</span><br>Decoded</h1>
+    <p class="hero-desc">An interactive breakdown of three versions of a salary schedule program — what works, what breaks, and why indentation changes everything.</p>
+    <div class="nav-pills">
+      <a href="#original" class="nav-pill">01 · Original</a>
+      <a href="#version2" class="nav-pill">02 · Broken</a>
+      <a href="#version3" class="nav-pill">03 · Fixed</a>
+      <a href="#simulator" class="nav-pill">04 · Simulator</a>
+      <a href="#flowcharts" class="nav-pill">05 · Flowcharts</a>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 1: ORIGINAL CODE -->
+<section class="section" id="original">
+  <div class="section-label">Code Block 01</div>
+  <h2>The Original Program</h2>
+  <p>This program computes a salary schedule showing how a starting salary compounds year over year with a fixed annual percentage raise. It collects three inputs, then loops to print each year's salary.</p>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="code-dots"><span></span><span></span><span></span></div>
+      <span class="code-title">salary.py — original</span>
+    </div>
+    <pre><span class="hl-comment"># Accept the inputs</span>
+<span class="hl-var">startSal</span>  = <span class="hl-func">float</span>(<span class="hl-func">input</span>(<span class="hl-string">"Enter the starting salary: $"</span>))
+<span class="hl-var">increase</span>  = <span class="hl-func">int</span>(<span class="hl-func">input</span>(<span class="hl-string">"Enter the annual % increase: "</span>))
+<span class="hl-var">years</span>     = <span class="hl-func">int</span>(<span class="hl-func">input</span>(<span class="hl-string">"Enter the number of years: "</span>))
+
+<span class="hl-comment"># Compute and display the results</span>
+<span class="hl-func">print</span>(<span class="hl-string">"Year   Salary\n-------------"</span>)
+<span class="hl-var">multiplier</span> = <span class="hl-number">1</span> + <span class="hl-var">increase</span> / <span class="hl-number">100</span>
+<span class="hl-var">nextSal</span>    = <span class="hl-var">startSal</span>
+
+<span class="hl-keyword">for</span> <span class="hl-var">year</span> <span class="hl-keyword">in</span> <span class="hl-func">range</span>(<span class="hl-number">1</span>, <span class="hl-var">years</span> + <span class="hl-number">1</span>):
+    <span class="hl-func">print</span>(<span class="hl-format">"%2d%12.2f"</span> % (<span class="hl-var">year</span>, <span class="hl-var">nextSal</span>))
+    <span class="hl-var">nextSal</span> *= <span class="hl-var">multiplier</span></pre>
+  </div>
+
+  <div class="annotation-grid">
+    <div class="annotation" data-num="1">
+      <div class="annotation-title">float() for salary</div>
+      <p>Wrapping <code>input()</code> in <code>float()</code> allows decimal salaries like $50,500.50. If you used <code>int()</code> here, cents would be silently truncated.</p>
+    </div>
+    <div class="annotation" data-num="2">
+      <div class="annotation-title">The multiplier trick</div>
+      <p><code>1 + increase / 100</code> converts a percentage into a compounding factor. A 5% raise becomes <code>1.05</code>, so each year's salary is simply <code>salary × 1.05</code>.</p>
+    </div>
+    <div class="annotation" data-num="3">
+      <div class="annotation-title">range(1, years + 1)</div>
+      <p>Starting at 1 instead of 0 means the year counter displays naturally. The <code>+ 1</code> ensures the final year is included, since <code>range()</code> excludes its upper bound.</p>
+    </div>
+    <div class="annotation" data-num="4">
+      <div class="annotation-title">Format string %2d%12.2f</div>
+      <p><code>%2d</code> right-aligns the year in a 2-character column. <code>%12.2f</code> right-aligns the salary in 12 characters with exactly 2 decimal places — creating clean columns.</p>
+    </div>
+    <div class="annotation" data-num="5">
+      <div class="annotation-title">Print-then-update order</div>
+      <p>The salary is printed <em>before</em> being multiplied. So Year 1 shows the original salary, Year 2 shows it after one raise, and so on — which is the expected behavior.</p>
+    </div>
+    <div class="annotation" data-num="6">
+      <div class="annotation-title">*= shorthand</div>
+      <p><code>nextSal *= multiplier</code> is identical to <code>nextSal = nextSal * multiplier</code>. This compound assignment applies the raise and saves the result back into the same variable.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2: BROKEN VERSION -->
+<section class="section" id="version2">
+  <div class="section-label">Code Block 02</div>
+  <h2>The Broken Version</h2>
+  <p>This version attempts the same task but contains multiple issues that prevent it from producing correct output — some stop it from running at all, others cause silent logical failures.</p>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="code-dots"><span></span><span></span><span></span></div>
+      <span class="code-title">version 2 — broken</span>
+    </div>
+    <pre><span class="hl-var">startSal</span>   = <span class="hl-func">int</span>(<span class="hl-func">input</span>(<span class="hl-string">"Enter the starting salary:  "</span>))   <span class="hl-bug">⚠ int truncates cents</span>
+<span class="hl-var">salIncrease</span> = <span class="hl-func">float</span>(<span class="hl-func">input</span>(<span class="hl-string">"Enter the annual % increase:  "</span>))
+<span class="hl-var">yearsExp</span>   = <span class="hl-func">int</span>(<span class="hl-func">input</span>(<span class="hl-string">"Enter the number of years:  "</span>))
+
+<span class="hl-var">salary</span> = <span class="hl-func">round</span>(<span class="hl-func">float</span>(<span class="hl-var">startSal</span>), <span class="hl-number">2</span>)
+<span class="hl-func">print</span>(<span class="hl-string">"Year      Salary"</span>)
+<span class="hl-func">print</span>(<span class="hl-bug">________________"</span>)  <span class="hl-bug">← SyntaxError: missing opening quote</span>
+
+<span class="hl-keyword">for</span> <span class="hl-var">count</span> <span class="hl-keyword">in</span> <span class="hl-func">range</span>(<span class="hl-number">1</span>, <span class="hl-var">yearsExp</span> + <span class="hl-number">1</span>):
+    <span class="hl-func">print</span>(<span class="hl-format">"%-6s"</span> % <span class="hl-var">count</span>, <span class="hl-format">"%6s"</span> % <span class="hl-func">round</span>(<span class="hl-var">salary</span> + (<span class="hl-var">salary</span> * <span class="hl-var">salIncrease</span>/<span class="hl-number">100</span>), <span class="hl-number">2</span>))
+    <span class="hl-comment"># ↑ salary is never updated — same value every iteration!</span></pre>
+  </div>
+
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>Issue</th>
+        <th>Type</th>
+        <th>Effect</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>int(input(...))</code> for salary</td>
+        <td><span class="badge badge-warn">LOGIC</span></td>
+        <td>Silently drops decimal cents. $50,500.50 becomes 50500.</td>
+      </tr>
+      <tr>
+        <td>Missing opening quote in <code>print(</code></td>
+        <td><span class="badge badge-err">SYNTAX</span></td>
+        <td>Program crashes immediately — won't even run.</td>
+      </tr>
+      <tr>
+        <td>Salary calculated but not saved</td>
+        <td><span class="badge badge-err">CRITICAL</span></td>
+        <td>Every year prints the same raised value — no compounding ever occurs.</td>
+      </tr>
+      <tr>
+        <td>Different format strings</td>
+        <td><span class="badge badge-warn">COSMETIC</span></td>
+        <td>Column alignment differs from original but doesn't break logic if fixed.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- SECTION 3: FIXED VERSION -->
+<section class="section" id="version3">
+  <div class="section-label">Code Block 03</div>
+  <h2>The Fixed Version</h2>
+  <p>After correcting the indentation so the salary update sits <em>inside</em> the loop, the logic closely mirrors the original. The remaining issues are a syntax error in the separator line and the <code>int()</code> type for salary input.</p>
+
+  <div class="diff">
+    <div class="diff-line context"><span class="diff-gutter">···</span>for count in range(1, yearsExp + 1):</div>
+    <div class="diff-line context"><span class="diff-gutter">···</span>    print("%-6s" % count, "%6s" % round(salary, 2))</div>
+    <div class="diff-line remove"><span class="diff-gutter">−</span>salary = round(salary + (salary * salIncrease/100), 2)  ← OUTSIDE loop</div>
+    <div class="diff-line add"><span class="diff-gutter">+</span>    salary = round(salary + (salary * salIncrease/100), 2)  ← INSIDE loop ✓</div>
+  </div>
+
+  <div class="code-wrap">
+    <div class="code-header">
+      <div class="code-dots"><span></span><span></span><span></span></div>
+      <span class="code-title">version 3 — fixed (with remaining issues noted)</span>
+    </div>
+    <pre><span class="hl-var">startSal</span>   = <span class="hl-func">int</span>(<span class="hl-func">input</span>(<span class="hl-string">"Enter the starting salary:  "</span>))    <span class="hl-comment"># ⚠ still int</span>
+<span class="hl-var">salIncrease</span> = <span class="hl-func">float</span>(<span class="hl-func">input</span>(<span class="hl-string">"Enter the annual % increase:  "</span>))
+<span class="hl-var">yearsExp</span>   = <span class="hl-func">int</span>(<span class="hl-func">input</span>(<span class="hl-string">"Enter the number of years:  "</span>))
+
+<span class="hl-var">salary</span> = <span class="hl-func">round</span>(<span class="hl-func">float</span>(<span class="hl-var">startSal</span>), <span class="hl-number">2</span>)
+<span class="hl-func">print</span>(<span class="hl-string">"Year      Salary"</span>)
+<span class="hl-func">print</span>(<span class="hl-bug">"________________"</span>)  <span class="hl-comment"># ← syntax error fixed (needs two quotes)</span>
+
+<span class="hl-keyword">for</span> <span class="hl-var">count</span> <span class="hl-keyword">in</span> <span class="hl-func">range</span>(<span class="hl-number">1</span>, <span class="hl-var">yearsExp</span> + <span class="hl-number">1</span>):
+    <span class="hl-func">print</span>(<span class="hl-format">"%-6s"</span> % <span class="hl-var">count</span>, <span class="hl-format">"%6s"</span> % <span class="hl-func">round</span>(<span class="hl-var">salary</span>, <span class="hl-number">2</span>))
+    <span class="hl-ok">salary = <span class="hl-func">round</span>(<span class="hl-var">salary</span> + (<span class="hl-var">salary</span> * <span class="hl-var">salIncrease</span>/<span class="hl-number">100</span>), <span class="hl-number">2</span>)  ✓ now inside loop</span></pre>
+  </div>
+
+  <div class="verdict">
+    <div class="verdict-icon">⚖</div>
+    <div class="verdict-text">
+      <strong>Verdict:</strong> With the indentation fix and the syntax error corrected, this version produces the same compounding salary output as the original. The two remaining differences are cosmetic: column alignment (format strings) and the <code>int()</code> input type that drops decimal cents. The core logic — print salary, then update it — now matches correctly.
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 4: LIVE SIMULATOR -->
+<section class="section" id="simulator">
+  <div class="section-label">Interactive Simulator</div>
+  <h2>Run It Yourself</h2>
+  <p>Enter values below to see exactly what the original program would output — with compounding applied correctly each year.</p>
+
+  <div class="simulator">
+    <div class="sim-header">
+      <span class="sim-title">▶ salary.py — live simulation</span>
+      <span style="font-family:var(--mono);font-size:0.7rem;color:var(--text-dim)">Original logic · compounding ✓</span>
+    </div>
+    <div class="sim-body">
+      <div class="sim-inputs">
+        <div class="input-group">
+          <label>Starting Salary ($)</label>
+          <input type="number" id="inp-salary" value="50000" min="0" step="100">
+        </div>
+        <div class="input-group">
+          <label>Annual % Increase</label>
+          <input type="number" id="inp-increase" value="5" min="0" max="100" step="0.5">
+        </div>
+        <div class="input-group">
+          <label>Number of Years</label>
+          <input type="number" id="inp-years" value="6" min="1" max="40" step="1">
+        </div>
+        <button class="run-btn" onclick="runSimulation()">▶ Run Program</button>
+      </div>
+      <div class="sim-output">
+        <div class="output-title">Output</div>
+        <div id="sim-output-area">
+          <p class="empty-state">Press "Run Program" to see output...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 5: FLOWCHARTS -->
+<section class="section" id="flowcharts">
+  <div class="section-label">Visual Flowcharts</div>
+  <h2>How Each Version Flows</h2>
+  <p>These diagrams trace the execution path of Code Block 1 (the working original) and Code Block 3 (with the indentation bug). Notice how moving a single line outside the loop breaks the entire compounding chain.</p>
+
+  <div class="fc-grid">
+
+    <!-- FLOWCHART 1: ORIGINAL -->
+    <div>
+      <div class="fc-panel-title v1">▶ Block 01 — Original (Working)</div>
+      <div class="flowchart">
+        <div class="fc-wrap">
+
+          <div class="fc-node">
+            <div class="fc-box fc-terminal">START</div>
+          </div>
+          <div class="fc-arrow"></div>
+
+          <div class="fc-node">
+            <div class="fc-box fc-io">Input: startSal (float)</div>
+          </div>
+          <div class="fc-arrow"></div>
+
+          <div class="fc-node">
+            <div class="fc-box fc-io">Input: increase (int %)</div>
+          </div>
+          <div class="fc-arrow"></div>
+
+          <div class="fc-node">
+            <div class="fc-box fc-io">Input: years (int)</div>
+          </div>
+          <div class="fc-arrow"></div>
+
+          <div class="fc-node">
+            <div class="fc-box fc-process">multiplier = 1 + increase / 100<br>nextSal = startSal<br>year = 1</div>
+          </div>
+          <div class="fc-arrow"></div>
+
+          <div class="fc-node" style="display:flex;flex-direction:column;align-items:center">
+            <div class="fc-box fc-decision" style="width:180px;height:80px;font-size:0.7rem">year ≤ years?</div>
+          </div>
+
+          <!-- Branch YES / NO -->
+          <div style="width:100%;display:flex;gap:0;position:relative;margin-top:0">
+            <div style="width:50%;display:flex;flex-direction:column;align-items:center;padding-top:10px;border-top:1px solid var(--border)">
+              <div class="fc-branch-label" style="color:var(--green)">YES</div>
+              <div class="fc-box fc-process" style="width:90%;font-size:0.72rem">print(year, nextSal)</div>
+              <div class="fc-arrow"></div>
+              <div class="fc-box fc-ok-box" style="width:90%;font-size:0.72rem">nextSal *= multiplier</div>
+              <div class="fc-arrow"></div>
+              <div class="fc-box fc-process" style="width:90%;font-size:0.72rem">year += 1</div>
+              <div style="font-family:var(--mono);font-size:0.65rem;color:var(--blue);margin-top:4px">↑ back to loop check</div>
+            </div>
+            <div style="width:50%;display:flex;flex-direction:column;align-items:center;padding-top:10px;border-top:1px solid var(--border)">
+              <div class="fc-branch-label" style="color:var(--red)">NO</div>
+              <div class="fc-arrow"></div>
+              <div class="fc-box fc-terminal" style="width:90%;font-size:0.72rem">END</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- FLOWCHART 3: BROKEN INDENT -->
+    <div>
+      <div class="fc-panel-title v3">✖ Block 03 — Indentation Bug</div>
+      <div class="flowchart">
+        <div class="fc-wrap">
+
+          <div class="fc-node">
+            <div class="fc-box fc-terminal">START</div>
+          </div>
+          <div class="fc-arrow"></div>
+
+          <div class="fc-node">
+            <div class="fc-box fc-io">Input: startSal (int ⚠)</div>
+          </div>
+          <div class="fc-arrow"></div>
+
+          <div class="fc-node">
+            <div class="fc-box fc-io">Input: salIncrease (float)</div>
+          </div>
+          <div class="fc-arrow"></div>
+
+          <div class="fc-node">
+            <div class="fc-box fc-io">Input: yearsExp (int)</div>
+          </div>
+          <div class="fc-arrow"></div>
+
+          <div class="fc-node">
+            <div class="fc-box fc-process">salary = float(startSal)<br>count = 1</div>
+          </div>
+          <div class="fc-arrow"></div>
+
+          <div class="fc-node" style="display:flex;flex-direction:column;align-items:center">
+            <div class="fc-box fc-decision" style="width:180px;height:80px;font-size:0.7rem">count ≤ yearsExp?</div>
+          </div>
+
+          <div style="width:100%;display:flex;gap:0;position:relative;margin-top:0">
+            <div style="width:50%;display:flex;flex-direction:column;align-items:center;padding-top:10px;border-top:1px solid var(--border)">
+              <div class="fc-branch-label" style="color:var(--green)">YES</div>
+              <div class="fc-box fc-process" style="width:90%;font-size:0.72rem">print(count, salary)</div>
+              <div class="fc-arrow"></div>
+              <div class="fc-box fc-bug-box" style="width:90%;font-size:0.65rem">⚠ salary NOT updated here<br>(it's outside the loop!)</div>
+              <div class="fc-arrow"></div>
+              <div class="fc-box fc-process" style="width:90%;font-size:0.72rem">count += 1</div>
+              <div style="font-family:var(--mono);font-size:0.65rem;color:var(--blue);margin-top:4px">↑ back to loop check</div>
+            </div>
+            <div style="width:50%;display:flex;flex-direction:column;align-items:center;padding-top:10px;border-top:1px solid var(--border)">
+              <div class="fc-branch-label" style="color:var(--red)">NO (loop ends)</div>
+              <div class="fc-arrow"></div>
+              <div class="fc-box fc-bug-box" style="width:90%;font-size:0.7rem">salary updated ONCE<br>after loop exits</div>
+              <div class="fc-arrow"></div>
+              <div class="fc-box fc-terminal" style="width:90%;font-size:0.72rem">END</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="verdict" style="border-left-color:var(--blue); margin-top:2.5rem">
+    <div class="verdict-icon">💡</div>
+    <div class="verdict-text">
+      <strong>Key takeaway:</strong> In Python, indentation is not cosmetic — it is syntax. A single tab of difference moves the salary update from <em>inside the loop</em> (runs every iteration, compounding correctly) to <em>outside the loop</em> (runs once after everything is done). The loop body only contains the <code>print</code> statement, so every row prints the original unchanged salary.
+    </div>
+  </div>
+</section>
+
+<footer>salary.py · Programming Exercise 3.7 · Interactive Explainer</footer>
+
+<script>
+  // SCROLL PROGRESS BAR
+  window.addEventListener('scroll', () => {
+    const scrolled = window.scrollY;
+    const total = document.documentElement.scrollHeight - window.innerHeight;
+    document.getElementById('scrollBar').style.width = (scrolled / total * 100) + '%';
+  });
+
+  // INTERSECTION OBSERVER FOR SECTION ANIMATIONS
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) e.target.classList.add('visible');
+    });
+  }, { threshold: 0.08 });
+
+  document.querySelectorAll('.section').forEach(s => observer.observe(s));
+
+  // SIMULATOR
+  function runSimulation() {
+    const startSal  = parseFloat(document.getElementById('inp-salary').value);
+    const increase  = parseFloat(document.getElementById('inp-increase').value);
+    const years     = parseInt(document.getElementById('inp-years').value);
+
+    if (isNaN(startSal) || isNaN(increase) || isNaN(years) || years < 1) {
+      document.getElementById('sim-output-area').innerHTML = '<p class="empty-state" style="color:var(--red)">Please enter valid values.</p>';
+      return;
+    }
+
+    const multiplier = 1 + increase / 100;
+    let nextSal = startSal;
+    let rows = '';
+
+    for (let year = 1; year <= years; year++) {
+      const delay = (year - 1) * 60;
+      rows += `<tr class="output-row" style="animation-delay:${delay}ms">
+        <td>${year}</td>
+        <td>$${nextSal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+      </tr>`;
+      nextSal *= multiplier;
+    }
+
+    document.getElementById('sim-output-area').innerHTML = `
+      <table class="output-table">
+        <thead><tr><th>Year</th><th style="text-align:right">Salary</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+</script>
+</body>
+</html>
